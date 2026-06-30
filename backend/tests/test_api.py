@@ -51,3 +51,24 @@ def test_ask_returns_assistant_fallback_with_recipe_context():
     }
     assert body["retrievedContext"][0]["recipeId"] == "starter-egg-fried-rice"
     assert body["retrievedContext"][0]["score"] == 0.29
+
+
+def test_ask_prioritizes_selected_recipe_context():
+    response = client.post(
+        "/ask",
+        json={
+            "question": "What can I cook with rice?",
+            "ingredients": ["eggs"],
+            "selectedRecipeId": "starter-tomato-pasta",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["citations"][0] == {
+        "recipeId": "starter-tomato-pasta",
+        "name": "Tomato Pasta",
+    }
+    assert body["retrievedContext"][0]["recipeId"] == "starter-tomato-pasta"
+    assert body["retrievedContext"][0]["score"] == 1.0

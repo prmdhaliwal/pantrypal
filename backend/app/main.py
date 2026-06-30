@@ -29,4 +29,5 @@ def ask(request: AskRequest) -> AskResponse:
         question=request.question,
         pantry_ingredients=request.ingredients,
         documents=documents,
+        selected_recipe_id=request.selectedRecipeId,
     )

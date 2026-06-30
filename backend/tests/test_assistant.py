@@ -64,3 +64,31 @@ def test_answer_cooking_question_uses_pantry_ingredients_for_retrieval():
     )
 
     assert [citation.recipeId for citation in response.citations] == ["fried-rice"]
+
+
+def test_answer_cooking_question_prioritizes_selected_recipe_context():
+    documents = [
+        RecipeDocument(
+            id="fried-rice",
+            text="Name: Egg Fried Rice\nIngredients: eggs, rice, soy sauce",
+            metadata={"recipe_id": "fried-rice", "name": "Egg Fried Rice"},
+        ),
+        RecipeDocument(
+            id="tomato-pasta",
+            text="Name: Tomato Pasta\nIngredients: pasta, tomato, garlic",
+            metadata={"recipe_id": "tomato-pasta", "name": "Tomato Pasta"},
+        ),
+    ]
+
+    response = answer_cooking_question(
+        question="What can I cook with rice?",
+        pantry_ingredients=["eggs"],
+        documents=documents,
+        selected_recipe_id="tomato-pasta",
+    )
+
+    assert [citation.recipeId for citation in response.citations] == [
+        "tomato-pasta",
+        "fried-rice",
+    ]
+    assert response.retrievedContext[0].score == 1.0

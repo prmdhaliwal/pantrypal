@@ -10,7 +10,7 @@ DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "recipes.json"
 
 sys.path.insert(0, str(BACKEND_ROOT))
 
-from backend.app.themealdb import fetch_meals_by_letters, write_recipe_cache  # noqa: E402
+from app.themealdb import fetch_meals_by_letters, write_recipe_cache  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:

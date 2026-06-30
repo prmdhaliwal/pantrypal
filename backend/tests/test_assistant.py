@@ -2,6 +2,15 @@ from app.assistant import answer_cooking_question
 from app.recipe_documents import RecipeDocument
 
 
+class FakeLLMClient:
+    def __init__(self) -> None:
+        self.prompt = ""
+
+    def generate(self, prompt: str) -> str:
+        self.prompt = prompt
+        return "You can make egg fried rice with your pantry ingredients."
+
+
 def test_answer_cooking_question_returns_retrieved_context_without_provider():
     documents = [
         RecipeDocument(
@@ -92,3 +101,32 @@ def test_answer_cooking_question_prioritizes_selected_recipe_context():
         "fried-rice",
     ]
     assert response.retrievedContext[0].score == 1.0
+
+
+def test_answer_cooking_question_uses_llm_client_when_configured():
+    documents = [
+        RecipeDocument(
+            id="fried-rice",
+            text="Name: Egg Fried Rice\nIngredients: eggs, rice, soy sauce",
+            metadata={"recipe_id": "fried-rice", "name": "Egg Fried Rice"},
+        )
+    ]
+    llm_client = FakeLLMClient()
+
+    response = answer_cooking_question(
+        question="Can I cook this with eggs?",
+        pantry_ingredients=["eggs", "rice"],
+        documents=documents,
+        llm_client=llm_client,
+    )
+
+    assert response.providerConfigured is True
+    assert response.answer == "You can make egg fried rice with your pantry ingredients."
+    assert "Question: Can I cook this with eggs?" in llm_client.prompt
+    assert "Pantry ingredients: eggs, rice" in llm_client.prompt
+    assert (
+        "Context 1: Egg Fried Rice\n"
+        "Name: Egg Fried Rice\n"
+        "Ingredients: eggs, rice, soy sauce"
+    ) in llm_client.prompt
+    assert [citation.recipeId for citation in response.citations] == ["fried-rice"]

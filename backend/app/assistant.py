@@ -1,3 +1,5 @@
+from typing import Protocol
+
 from app.recipe_documents import RecipeDocument
 from app.recipe_retriever import RetrievedRecipeDocument, retrieve_recipe_documents
 from app.schemas import AskCitation, AskResponse, RetrievedContext
@@ -9,11 +11,17 @@ FALLBACK_ANSWER = (
 )
 
 
+class LLMClient(Protocol):
+    def generate(self, prompt: str) -> str:
+        ...
+
+
 def answer_cooking_question(
     question: str,
     pantry_ingredients: list[str],
     documents: list[RecipeDocument],
     selected_recipe_id: str | None = None,
+    llm_client: LLMClient | None = None,
 ) -> AskResponse:
     query = " ".join([question, *pantry_ingredients])
     retrieved_documents = retrieve_recipe_documents(query, documents)
@@ -22,26 +30,27 @@ def answer_cooking_question(
         documents,
         retrieved_documents,
     )
+    contexts = _context_from_results(retrieved_documents)
+    answer = FALLBACK_ANSWER
+    provider_configured = False
+
+    if llm_client is not None:
+        answer = llm_client.generate(
+            _build_prompt(question, pantry_ingredients, contexts)
+        )
+        provider_configured = True
 
     return AskResponse(
-        answer=FALLBACK_ANSWER,
+        answer=answer,
         citations=[
             AskCitation(
-                recipeId=result.document.metadata["recipe_id"],
-                name=result.document.metadata["name"],
+                recipeId=context.recipeId,
+                name=context.name,
             )
-            for result in retrieved_documents
+            for context in contexts
         ],
-        retrievedContext=[
-            RetrievedContext(
-                recipeId=result.document.metadata["recipe_id"],
-                name=result.document.metadata["name"],
-                text=result.document.text,
-                score=result.score,
-            )
-            for result in retrieved_documents
-        ],
-        providerConfigured=False,
+        retrievedContext=contexts,
+        providerConfigured=provider_configured,
     )
 
 
@@ -77,3 +86,37 @@ def _find_recipe_document(
             return document
 
     return None
+
+
+def _context_from_results(
+    retrieved_documents: list[RetrievedRecipeDocument],
+) -> list[RetrievedContext]:
+    return [
+        RetrievedContext(
+            recipeId=result.document.metadata["recipe_id"],
+            name=result.document.metadata["name"],
+            text=result.document.text,
+            score=result.score,
+        )
+        for result in retrieved_documents
+    ]
+
+
+def _build_prompt(
+    question: str,
+    pantry_ingredients: list[str],
+    contexts: list[RetrievedContext],
+) -> str:
+    context_text = "\n\n".join(
+        f"Context {index}: {context.name}\n{context.text}"
+        for index, context in enumerate(contexts, start=1)
+    )
+    pantry_text = ", ".join(pantry_ingredients)
+
+    return (
+        "Answer the cooking question using only the recipe context below.\n"
+        "If the context is not enough, say what is missing.\n\n"
+        f"Question: {question}\n"
+        f"Pantry ingredients: {pantry_text}\n\n"
+        f"{context_text}"
+    )

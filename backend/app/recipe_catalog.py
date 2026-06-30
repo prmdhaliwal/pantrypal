@@ -10,13 +10,21 @@ DEFAULT_RECIPE_CACHE = PROJECT_ROOT / "data" / "recipes.json"
 
 
 def load_recipe_candidates(path: Path) -> list[RecipeCandidate]:
-    raw_recipes = json.loads(path.read_text(encoding="utf-8"))
+    raw_recipes = load_recipe_records(path)
 
     return [_recipe_from_json(recipe) for recipe in raw_recipes]
 
 
+def load_recipe_records(path: Path) -> list[dict[str, Any]]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def load_default_recipes() -> list[RecipeCandidate]:
     return load_recipe_candidates(DEFAULT_RECIPE_CACHE)
+
+
+def load_default_recipe_records() -> list[dict[str, Any]]:
+    return load_recipe_records(DEFAULT_RECIPE_CACHE)
 
 
 def _recipe_from_json(recipe: dict[str, Any]) -> RecipeCandidate:
@@ -32,3 +40,4 @@ def _recipe_from_json(recipe: dict[str, Any]) -> RecipeCandidate:
 
 
 STARTER_RECIPES = load_default_recipes()
+STARTER_RECIPE_RECORDS = load_default_recipe_records()

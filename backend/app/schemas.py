@@ -21,6 +21,12 @@ class RecommendResponse(BaseModel):
     results: list[RecipeRecommendation]
 
 
+class AskRequest(BaseModel):
+    question: str = Field(min_length=1)
+    ingredients: list[str] = Field(min_length=1)
+    selectedRecipeId: str | None = None
+
+
 class AskCitation(BaseModel):
     recipeId: str
     name: str

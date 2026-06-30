@@ -19,3 +19,22 @@ class RecipeRecommendation(BaseModel):
 
 class RecommendResponse(BaseModel):
     results: list[RecipeRecommendation]
+
+
+class AskCitation(BaseModel):
+    recipeId: str
+    name: str
+
+
+class RetrievedContext(BaseModel):
+    recipeId: str
+    name: str
+    text: str
+    score: float
+
+
+class AskResponse(BaseModel):
+    answer: str
+    citations: list[AskCitation]
+    retrievedContext: list[RetrievedContext]
+    providerConfigured: bool

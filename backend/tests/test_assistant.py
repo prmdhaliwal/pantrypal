@@ -1,0 +1,66 @@
+from app.assistant import answer_cooking_question
+from app.recipe_documents import RecipeDocument
+
+
+def test_answer_cooking_question_returns_retrieved_context_without_provider():
+    documents = [
+        RecipeDocument(
+            id="fried-rice",
+            text=(
+                "Name: Egg Fried Rice\n"
+                "Ingredients: eggs, rice, soy sauce"
+            ),
+            metadata={"recipe_id": "fried-rice", "name": "Egg Fried Rice"},
+        ),
+        RecipeDocument(
+            id="omelette",
+            text=(
+                "Name: Simple Omelette\n"
+                "Ingredients: eggs, cheese"
+            ),
+            metadata={"recipe_id": "omelette", "name": "Simple Omelette"},
+        ),
+    ]
+
+    response = answer_cooking_question(
+        question="What can I cook with rice?",
+        pantry_ingredients=["eggs"],
+        documents=documents,
+    )
+
+    assert response.providerConfigured is False
+    assert response.answer == (
+        "Assistant provider is not configured. "
+        "Showing retrieved recipe context instead."
+    )
+    assert response.citations[0].model_dump() == {
+        "recipeId": "fried-rice",
+        "name": "Egg Fried Rice",
+    }
+    assert response.retrievedContext[0].model_dump() == {
+        "recipeId": "fried-rice",
+        "name": "Egg Fried Rice",
+        "text": (
+            "Name: Egg Fried Rice\n"
+            "Ingredients: eggs, rice, soy sauce"
+        ),
+        "score": 0.29,
+    }
+
+
+def test_answer_cooking_question_uses_pantry_ingredients_for_retrieval():
+    documents = [
+        RecipeDocument(
+            id="fried-rice",
+            text="Name: Egg Fried Rice\nIngredients: eggs, rice, soy sauce",
+            metadata={"recipe_id": "fried-rice", "name": "Egg Fried Rice"},
+        )
+    ]
+
+    response = answer_cooking_question(
+        question="What can I cook?",
+        pantry_ingredients=["rice"],
+        documents=documents,
+    )
+
+    assert [citation.recipeId for citation in response.citations] == ["fried-rice"]

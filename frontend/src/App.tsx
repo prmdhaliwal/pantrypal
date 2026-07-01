@@ -105,6 +105,12 @@ function App() {
     recommendationStatus === 'loading'
       ? `Searching with ${ingredients.length} pantry items.`
       : 'Starter examples shown until you run a backend search.'
+  const assistantStatusText =
+    assistantStatus === 'loading'
+      ? `Retrieving recipe context for ${ingredients.length} pantry items.`
+      : selectedRecipe
+        ? `Assistant will focus on ${selectedRecipe.name}.`
+        : 'Assistant will use your pantry ingredients unless you select a recipe.'
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) {
@@ -455,6 +461,14 @@ function App() {
                   Selected recipe: {selectedRecipe.name}
                 </p>
               )}
+
+              <div
+                className={`alert text-sm ${
+                  assistantStatus === 'loading' ? 'alert-info' : ''
+                }`}
+              >
+                {assistantStatusText}
+              </div>
 
               <label className="form-control">
                 <span className="label-text mb-2">Question</span>

@@ -323,6 +323,71 @@ describe('App', () => {
     expect(screen.getByText('Selected recipe: Spinach Rice Bowl')).toBeInTheDocument()
   })
 
+  it('clears stale recommendations and assistant context when pantry changes', async () => {
+    const user = userEvent.setup()
+    const fetch = vi.fn(async (input: string) => {
+      if (input.endsWith('/recommend')) {
+        return Response.json({
+          results: [
+            {
+              id: 'starter-spinach-rice-bowl',
+              name: 'Spinach Rice Bowl',
+              imageUrl: null,
+              category: 'Vegetarian',
+              area: 'Australian',
+              matchedIngredients: ['rice'],
+              missingIngredients: ['spinach'],
+              score: 0.75,
+              instructionsUrl: null,
+            },
+          ],
+        })
+      }
+
+      return Response.json({
+        answer: 'Use the selected rice bowl context.',
+        citations: [
+          { recipeId: 'starter-spinach-rice-bowl', name: 'Spinach Rice Bowl' },
+        ],
+        retrievedContext: [
+          {
+            recipeId: 'starter-spinach-rice-bowl',
+            name: 'Spinach Rice Bowl',
+            text: 'Name: Spinach Rice Bowl',
+            score: 1,
+          },
+        ],
+        providerConfigured: false,
+      })
+    })
+
+    Object.defineProperty(globalThis, 'fetch', {
+      configurable: true,
+      value: fetch,
+      writable: true,
+    })
+
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Find recipes' }))
+    await screen.findByRole('heading', { name: 'Spinach Rice Bowl' })
+    await user.click(
+      screen.getByRole('button', { name: 'Use Spinach Rice Bowl in assistant' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Ask assistant' }))
+    await screen.findByText('Use the selected rice bowl context.')
+
+    await user.type(screen.getByLabelText('Add ingredient'), 'spinach')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    expect(screen.queryByRole('heading', { name: 'Spinach Rice Bowl' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Selected recipe: Spinach Rice Bowl')).not.toBeInTheDocument()
+    expect(screen.queryByText('Use the selected rice bowl context.')).not.toBeInTheDocument()
+    expect(
+      screen.getByText('Ask a pantry question to retrieve grounded recipe context.'),
+    ).toBeInTheDocument()
+  })
+
   it('shows an error when the cooking assistant fails', async () => {
     const user = userEvent.setup()
     const fetch = vi.fn(async () => new Response('Server error', { status: 500 }))

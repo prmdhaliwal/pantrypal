@@ -7,9 +7,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
 
+const originalFetch = globalThis.fetch
 const originalMatchMedia = window.matchMedia
 
 afterEach(() => {
+  Object.defineProperty(globalThis, 'fetch', {
+    configurable: true,
+    value: originalFetch,
+    writable: true,
+  })
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     value: originalMatchMedia,
@@ -90,5 +96,69 @@ describe('App', () => {
     expect(
       screen.getByRole('button', { name: 'Follow system theme' }),
     ).toHaveClass('btn-active')
+  })
+
+  it('loads recipe recommendations from the API', async () => {
+    const user = userEvent.setup()
+    const fetch = vi.fn(async () =>
+      Response.json({
+        results: [
+          {
+            id: 'starter-spinach-rice-bowl',
+            name: 'Spinach Rice Bowl',
+            imageUrl: null,
+            category: 'Vegetarian',
+            area: 'Australian',
+            matchedIngredients: ['eggs', 'rice'],
+            missingIngredients: ['spinach'],
+            score: 0.75,
+            instructionsUrl: null,
+          },
+        ],
+      }),
+    )
+
+    Object.defineProperty(globalThis, 'fetch', {
+      configurable: true,
+      value: fetch,
+      writable: true,
+    })
+
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Find recipes' }))
+
+    expect(fetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:8000/recommend',
+      expect.objectContaining({
+        body: JSON.stringify({ ingredients: ['eggs', 'rice', 'tomato'] }),
+        method: 'POST',
+      }),
+    )
+    expect(
+      await screen.findByRole('heading', { name: 'Spinach Rice Bowl' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Matched: eggs, rice')).toBeInTheDocument()
+    expect(screen.getByText('Missing: spinach')).toBeInTheDocument()
+    expect(screen.getByText('75%')).toBeInTheDocument()
+  })
+
+  it('shows an error when recipe recommendations fail', async () => {
+    const user = userEvent.setup()
+    const fetch = vi.fn(async () => new Response('Server error', { status: 500 }))
+
+    Object.defineProperty(globalThis, 'fetch', {
+      configurable: true,
+      value: fetch,
+      writable: true,
+    })
+
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Find recipes' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not load recipes. Check the backend and try again.',
+    )
   })
 })

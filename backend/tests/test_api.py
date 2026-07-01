@@ -34,6 +34,20 @@ def test_recommend_returns_ranked_recipes_for_matching_ingredients():
     assert results[0]["score"] == 0.67
 
 
+def test_recommend_allows_frontend_dev_origin():
+    response = client.options(
+        "/recommend",
+        headers={
+            "Origin": "http://127.0.0.1:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:5173"
+
+
 def test_ask_returns_assistant_fallback_with_recipe_context():
     response = client.post(
         "/ask",

@@ -161,4 +161,72 @@ describe('App', () => {
       'Could not load recipes. Check the backend and try again.',
     )
   })
+
+  it('asks the cooking assistant with the current pantry ingredients', async () => {
+    const user = userEvent.setup()
+    const fetch = vi.fn(async () =>
+      Response.json({
+        answer: 'Use the rice with eggs and skip the soy sauce.',
+        citations: [{ recipeId: 'starter-egg-fried-rice', name: 'Egg Fried Rice' }],
+        retrievedContext: [
+          {
+            recipeId: 'starter-egg-fried-rice',
+            name: 'Egg Fried Rice',
+            text: 'Egg Fried Rice uses eggs and rice from your pantry.',
+            score: 0.29,
+          },
+        ],
+        providerConfigured: false,
+      }),
+    )
+
+    Object.defineProperty(globalThis, 'fetch', {
+      configurable: true,
+      value: fetch,
+      writable: true,
+    })
+
+    render(<App />)
+
+    await user.clear(screen.getByLabelText('Question'))
+    await user.type(screen.getByLabelText('Question'), 'What can I cook with rice?')
+    await user.click(screen.getByRole('button', { name: 'Ask assistant' }))
+
+    expect(fetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:8000/ask',
+      expect.objectContaining({
+        body: JSON.stringify({
+          question: 'What can I cook with rice?',
+          ingredients: ['eggs', 'rice', 'tomato'],
+        }),
+        method: 'POST',
+      }),
+    )
+    expect(
+      await screen.findByText('Use the rice with eggs and skip the soy sauce.'),
+    ).toBeInTheDocument()
+    expect(screen.getAllByText('Egg Fried Rice')).toHaveLength(2)
+    expect(
+      screen.getByText('Egg Fried Rice uses eggs and rice from your pantry.'),
+    ).toBeInTheDocument()
+  })
+
+  it('shows an error when the cooking assistant fails', async () => {
+    const user = userEvent.setup()
+    const fetch = vi.fn(async () => new Response('Server error', { status: 500 }))
+
+    Object.defineProperty(globalThis, 'fetch', {
+      configurable: true,
+      value: fetch,
+      writable: true,
+    })
+
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Ask assistant' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not ask the assistant. Check the backend and try again.',
+    )
+  })
 })

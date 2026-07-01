@@ -17,9 +17,11 @@ import {
 import {
   createPantryPalApi,
   type RecipeRecommendation,
+  type RetrievedContext,
 } from './api/pantryPalApi'
 
 type ThemeMode = 'dark' | 'light' | 'system'
+type AssistantStatus = 'idle' | 'loading' | 'loaded' | 'error'
 type RecommendationStatus = 'idle' | 'loading' | 'loaded' | 'error'
 type ResolvedTheme = 'pantrypal-dark' | 'pantrypal-light'
 
@@ -75,9 +77,15 @@ function App() {
   const pantryPalApi = useMemo(() => createPantryPalApi(), [])
   const [ingredients, setIngredients] = useState(starterIngredients)
   const [ingredientInput, setIngredientInput] = useState('')
+  const [assistantAnswer, setAssistantAnswer] = useState('')
+  const [assistantQuestion, setAssistantQuestion] = useState(
+    'Can I make the fried rice without soy sauce?',
+  )
+  const [assistantStatus, setAssistantStatus] = useState<AssistantStatus>('idle')
   const [recommendations, setRecommendations] = useState<RecipeRecommendation[]>([])
   const [recommendationStatus, setRecommendationStatus] =
     useState<RecommendationStatus>('idle')
+  const [retrievedContext, setRetrievedContext] = useState<RetrievedContext[]>([])
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark')
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme)
 
@@ -129,6 +137,29 @@ function App() {
       setRecommendationStatus('loaded')
     } catch {
       setRecommendationStatus('error')
+    }
+  }
+
+  async function askAssistant() {
+    const question = assistantQuestion.trim()
+
+    if (!question) {
+      return
+    }
+
+    setAssistantStatus('loading')
+
+    try {
+      const response = await pantryPalApi.askCookingQuestion({
+        question,
+        ingredients,
+      })
+
+      setAssistantAnswer(response.answer)
+      setRetrievedContext(response.retrievedContext)
+      setAssistantStatus('loaded')
+    } catch {
+      setAssistantStatus('error')
     }
   }
 
@@ -361,27 +392,54 @@ function App() {
                 <span className="label-text mb-2">Question</span>
                 <textarea
                   className="textarea textarea-bordered min-h-28 resize-none"
-                  defaultValue="Can I make the fried rice without soy sauce?"
+                  onChange={(event) => setAssistantQuestion(event.target.value)}
+                  value={assistantQuestion}
                 />
               </label>
 
-              <button className="btn btn-info" type="button">
+              <button
+                className="btn btn-info"
+                disabled={assistantStatus === 'loading'}
+                onClick={askAssistant}
+                type="button"
+              >
                 <MessageSquareText aria-hidden="true" size={16} />
-                Ask assistant
+                {assistantStatus === 'loading' ? 'Asking assistant' : 'Ask assistant'}
               </button>
+
+              {assistantStatus === 'error' && (
+                <div className="alert alert-error" role="alert">
+                  Could not ask the assistant. Check the backend and try again.
+                </div>
+              )}
 
               <div className="border-base-300 rounded-lg border p-4">
                 <p className="mb-2 text-sm font-semibold">Retrieved context</p>
-                <p className="text-base-content/65 text-sm">
-                  Egg Fried Rice uses eggs and rice from your pantry. Soy sauce is
-                  currently marked as missing.
-                </p>
+                {retrievedContext.length > 0 ? (
+                  <div className="space-y-3">
+                    {retrievedContext.map((context) => (
+                      <div key={context.recipeId}>
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                          <p className="text-sm font-medium">{context.name}</p>
+                          <span className="badge badge-info badge-outline">
+                            {formatScore(context.score)}
+                          </span>
+                        </div>
+                        <p className="text-base-content/65 text-sm">{context.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-base-content/65 text-sm">
+                    Ask a question to retrieve recipe context from the backend.
+                  </p>
+                )}
               </div>
 
               <div className="chat chat-start mt-auto">
                 <div className="chat-bubble bg-base-200 text-base-content">
-                  I will use recipe context here once the assistant panel is wired
-                  to the backend.
+                  {assistantAnswer ||
+                    'I will use recipe context here once the assistant panel is wired to the backend.'}
                 </div>
               </div>
             </div>

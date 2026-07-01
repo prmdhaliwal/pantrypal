@@ -45,6 +45,22 @@ describe('App', () => {
     ).toBeInTheDocument()
   })
 
+  it('describes the connected recommendation and assistant workflow', () => {
+    render(<App />)
+
+    expect(screen.getByText('Backend recommender')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Find recipes to rank pantry matches with the local backend.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Ask a pantry question to retrieve grounded recipe context.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/next slice/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/once wired to the backend/i)).not.toBeInTheDocument()
+  })
+
   it('adds a pantry ingredient locally', async () => {
     const user = userEvent.setup()
 

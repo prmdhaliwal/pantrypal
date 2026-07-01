@@ -307,11 +307,10 @@ function App() {
               <div className="border-base-300 mt-auto rounded-lg border p-4">
                 <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
                   <Sparkles aria-hidden="true" size={16} />
-                  Smart matching
+                  Backend recommender
                 </div>
                 <p className="text-base-content/65 text-sm">
-                  The next slice will send these ingredients to the backend
-                  recommender and replace the sample recipes.
+                  Find recipes to rank pantry matches with the local backend.
                 </p>
               </div>
             </div>
@@ -464,7 +463,7 @@ function App() {
                   </div>
                 ) : (
                   <p className="text-base-content/65 text-sm">
-                    Ask a question to retrieve recipe context from the backend.
+                    Ask a pantry question to retrieve grounded recipe context.
                   </p>
                 )}
               </div>
@@ -472,7 +471,7 @@ function App() {
               <div className="chat chat-start mt-auto">
                 <div className="chat-bubble bg-base-200 text-base-content">
                   {assistantAnswer ||
-                    'I will use recipe context here once the assistant panel is wired to the backend.'}
+                    'Ask the assistant to get a grounded answer from retrieved recipe context.'}
                 </div>
               </div>
             </div>

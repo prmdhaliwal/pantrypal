@@ -1,15 +1,21 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Bot,
   ChefHat,
   Clock3,
   ListChecks,
   MessageSquareText,
+  Monitor,
+  Moon,
   Plus,
   Search,
   Sparkles,
+  Sun,
   X,
 } from 'lucide-react'
+
+type ThemeMode = 'dark' | 'light' | 'system'
+type ResolvedTheme = 'pantrypal-dark' | 'pantrypal-light'
 
 const starterIngredients = ['eggs', 'rice', 'tomato']
 
@@ -37,14 +43,41 @@ const sampleRecipes = [
   },
 ]
 
+function getSystemTheme(): ResolvedTheme {
+  if (typeof window === 'undefined' || !window.matchMedia) {
+    return 'pantrypal-dark'
+  }
+
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'pantrypal-dark'
+    : 'pantrypal-light'
+}
+
 function App() {
   const [ingredients, setIngredients] = useState(starterIngredients)
   const [ingredientInput, setIngredientInput] = useState('')
+  const [themeMode, setThemeMode] = useState<ThemeMode>('dark')
+  const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme)
 
   const ingredientSummary = useMemo(
     () => `${ingredients.length} pantry items ready`,
     [ingredients.length],
   )
+  const resolvedTheme = themeMode === 'system' ? systemTheme : `pantrypal-${themeMode}`
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      return undefined
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const updateSystemTheme = () => setSystemTheme(getSystemTheme())
+
+    updateSystemTheme()
+    mediaQuery.addEventListener('change', updateSystemTheme)
+
+    return () => mediaQuery.removeEventListener('change', updateSystemTheme)
+  }, [])
 
   function addIngredient(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -64,7 +97,10 @@ function App() {
   }
 
   return (
-    <main className="min-h-screen bg-base-200 text-base-content">
+    <main
+      className="min-h-screen bg-base-200 text-base-content"
+      data-theme={resolvedTheme}
+    >
       <header className="border-base-300 bg-base-100/95 border-b">
         <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-5">
           <div className="flex items-center gap-3">
@@ -78,9 +114,49 @@ function App() {
               </p>
             </div>
           </div>
-          <div className="hidden items-center gap-2 text-sm md:flex">
-            <span className="badge badge-success badge-outline">Local pantry</span>
-            <span className="badge badge-outline">RAG assistant ready</span>
+          <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-2 text-sm md:flex">
+              <span className="badge badge-success badge-outline">Local pantry</span>
+              <span className="badge badge-outline">RAG assistant ready</span>
+            </div>
+            <div aria-label="Theme mode" className="join" role="group">
+              <button
+                aria-label="Use dark theme"
+                aria-pressed={themeMode === 'dark'}
+                className={`btn btn-square btn-sm join-item ${
+                  themeMode === 'dark' ? 'btn-active' : ''
+                }`}
+                onClick={() => setThemeMode('dark')}
+                title="Dark"
+                type="button"
+              >
+                <Moon aria-hidden="true" size={16} />
+              </button>
+              <button
+                aria-label="Use light theme"
+                aria-pressed={themeMode === 'light'}
+                className={`btn btn-square btn-sm join-item ${
+                  themeMode === 'light' ? 'btn-active' : ''
+                }`}
+                onClick={() => setThemeMode('light')}
+                title="Light"
+                type="button"
+              >
+                <Sun aria-hidden="true" size={16} />
+              </button>
+              <button
+                aria-label="Follow system theme"
+                aria-pressed={themeMode === 'system'}
+                className={`btn btn-square btn-sm join-item ${
+                  themeMode === 'system' ? 'btn-active' : ''
+                }`}
+                onClick={() => setThemeMode('system')}
+                title="System"
+                type="button"
+              >
+                <Monitor aria-hidden="true" size={16} />
+              </button>
+            </div>
           </div>
         </div>
       </header>

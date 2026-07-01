@@ -3,7 +3,7 @@
   themes: false;
 }
 @plugin "daisyui/theme" {
-  name: "pantrypal";
+  name: "pantrypal-dark";
   default: true;
   prefersdark: true;
   color-scheme: dark;
@@ -27,6 +27,42 @@
   --color-warning: #ffd8a1;
   --color-warning-content: #1f1f1f;
   --color-error: #c5acd3;
+  --color-error-content: #1f1f1f;
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+@plugin "daisyui/theme" {
+  name: "pantrypal-light";
+  default: false;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: #f2f2f2;
+  --color-base-200: color-mix(in srgb, #1f1f1f 6%, #f2f2f2);
+  --color-base-300: color-mix(in srgb, #1f1f1f 14%, #f2f2f2);
+  --color-base-content: #1f1f1f;
+  --color-primary: #ac8bc0;
+  --color-primary-content: #1f1f1f;
+  --color-secondary: #abdac6;
+  --color-secondary-content: #1f1f1f;
+  --color-accent: #fec679;
+  --color-accent-content: #1f1f1f;
+  --color-neutral: #1f1f1f;
+  --color-neutral-content: #f2f2f2;
+  --color-info: #ac8bc0;
+  --color-info-content: #1f1f1f;
+  --color-success: #abdac6;
+  --color-success-content: #1f1f1f;
+  --color-warning: #fec679;
+  --color-warning-content: #1f1f1f;
+  --color-error: #ac8bc0;
   --color-error-content: #1f1f1f;
 
   --radius-selector: 0.5rem;

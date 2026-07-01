@@ -3,11 +3,18 @@ import '@testing-library/jest-dom/vitest'
 
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
 
+const originalMatchMedia = window.matchMedia
+
 afterEach(() => {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    value: originalMatchMedia,
+    writable: true,
+  })
   cleanup()
 })
 
@@ -41,5 +48,47 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Add' }))
 
     expect(screen.getByText('spinach')).toBeInTheDocument()
+  })
+
+  it('switches between dark, light, and system theme modes', async () => {
+    const user = userEvent.setup()
+    const matchMedia = vi.fn().mockImplementation((query: string) => ({
+      addEventListener: vi.fn(),
+      addListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+      matches: false,
+      media: query,
+      onchange: null,
+      removeEventListener: vi.fn(),
+      removeListener: vi.fn(),
+    }))
+
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: matchMedia,
+      writable: true,
+    })
+
+    render(<App />)
+
+    expect(screen.getByRole('main')).toHaveAttribute(
+      'data-theme',
+      'pantrypal-dark',
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Use light theme' }))
+    expect(screen.getByRole('main')).toHaveAttribute(
+      'data-theme',
+      'pantrypal-light',
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Follow system theme' }))
+    expect(screen.getByRole('main')).toHaveAttribute(
+      'data-theme',
+      'pantrypal-light',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Follow system theme' }),
+    ).toHaveClass('btn-active')
   })
 })

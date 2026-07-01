@@ -1,9 +1,15 @@
 from fastapi.testclient import TestClient
 
+import app.main as main
 from app.main import app
 
 
 client = TestClient(app)
+
+
+class FakeLLMClient:
+    def generate(self, prompt: str) -> str:
+        return "Generated answer from configured provider."
 
 
 def test_health_returns_ok():
@@ -72,3 +78,56 @@ def test_ask_prioritizes_selected_recipe_context():
     }
     assert body["retrievedContext"][0]["recipeId"] == "starter-tomato-pasta"
     assert body["retrievedContext"][0]["score"] == 1.0
+
+
+def test_ask_uses_configured_llm_provider(monkeypatch):
+    monkeypatch.setattr(
+        main,
+        "build_llm_client_from_env",
+        lambda: FakeLLMClient(),
+        raising=False,
+    )
+
+    response = client.post(
+        "/ask",
+        json={
+            "question": "Can I cook this with eggs?",
+            "ingredients": ["eggs", "rice"],
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["providerConfigured"] is True
+    assert body["answer"] == "Generated answer from configured provider."
+
+
+def test_ask_falls_back_when_llm_provider_config_is_invalid(monkeypatch):
+    def raise_provider_error():
+        raise ValueError("LLM_API_KEY is required")
+
+    monkeypatch.setattr(
+        main,
+        "build_llm_client_from_env",
+        raise_provider_error,
+        raising=False,
+    )
+
+    response = client.post(
+        "/ask",
+        json={
+            "question": "What can I cook with rice?",
+            "ingredients": ["eggs"],
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["providerConfigured"] is False
+    assert body["answer"] == (
+        "Assistant provider is not configured. "
+        "Showing retrieved recipe context instead."
+    )
+    assert body["retrievedContext"][0]["recipeId"] == "starter-egg-fried-rice"

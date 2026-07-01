@@ -11,6 +11,11 @@ class FakeLLMClient:
         return "You can make egg fried rice with your pantry ingredients."
 
 
+class FailingLLMClient:
+    def generate(self, prompt: str) -> str:
+        raise RuntimeError("provider unavailable")
+
+
 def test_answer_cooking_question_returns_retrieved_context_without_provider():
     documents = [
         RecipeDocument(
@@ -129,4 +134,28 @@ def test_answer_cooking_question_uses_llm_client_when_configured():
         "Name: Egg Fried Rice\n"
         "Ingredients: eggs, rice, soy sauce"
     ) in llm_client.prompt
+    assert [citation.recipeId for citation in response.citations] == ["fried-rice"]
+
+
+def test_answer_cooking_question_falls_back_when_llm_client_fails():
+    documents = [
+        RecipeDocument(
+            id="fried-rice",
+            text="Name: Egg Fried Rice\nIngredients: eggs, rice, soy sauce",
+            metadata={"recipe_id": "fried-rice", "name": "Egg Fried Rice"},
+        )
+    ]
+
+    response = answer_cooking_question(
+        question="Can I cook this with eggs?",
+        pantry_ingredients=["eggs", "rice"],
+        documents=documents,
+        llm_client=FailingLLMClient(),
+    )
+
+    assert response.providerConfigured is False
+    assert response.answer == (
+        "Assistant provider is not configured. "
+        "Showing retrieved recipe context instead."
+    )
     assert [citation.recipeId for citation in response.citations] == ["fried-rice"]

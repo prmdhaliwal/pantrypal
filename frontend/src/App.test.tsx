@@ -211,6 +211,74 @@ describe('App', () => {
     ).toBeInTheDocument()
   })
 
+  it('sends the selected recipe id to the cooking assistant', async () => {
+    const user = userEvent.setup()
+    const fetch = vi.fn(async (input: string) => {
+      if (input.endsWith('/recommend')) {
+        return Response.json({
+          results: [
+            {
+              id: 'starter-spinach-rice-bowl',
+              name: 'Spinach Rice Bowl',
+              imageUrl: null,
+              category: 'Vegetarian',
+              area: 'Australian',
+              matchedIngredients: ['rice'],
+              missingIngredients: ['spinach'],
+              score: 0.75,
+              instructionsUrl: null,
+            },
+          ],
+        })
+      }
+
+      return Response.json({
+        answer: 'Use the selected rice bowl context.',
+        citations: [
+          { recipeId: 'starter-spinach-rice-bowl', name: 'Spinach Rice Bowl' },
+        ],
+        retrievedContext: [
+          {
+            recipeId: 'starter-spinach-rice-bowl',
+            name: 'Spinach Rice Bowl',
+            text: 'Name: Spinach Rice Bowl',
+            score: 1,
+          },
+        ],
+        providerConfigured: false,
+      })
+    })
+
+    Object.defineProperty(globalThis, 'fetch', {
+      configurable: true,
+      value: fetch,
+      writable: true,
+    })
+
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Find recipes' }))
+    await screen.findByRole('heading', { name: 'Spinach Rice Bowl' })
+    await user.click(
+      screen.getByRole('button', { name: 'Use Spinach Rice Bowl in assistant' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Ask assistant' }))
+
+    expect(fetch).toHaveBeenLastCalledWith(
+      'http://127.0.0.1:8000/ask',
+      expect.objectContaining({
+        body: JSON.stringify({
+          question: 'Can I make the fried rice without soy sauce?',
+          ingredients: ['eggs', 'rice', 'tomato'],
+          selectedRecipeId: 'starter-spinach-rice-bowl',
+        }),
+        method: 'POST',
+      }),
+    )
+    expect(await screen.findByText('Use the selected rice bowl context.')).toBeInTheDocument()
+    expect(screen.getByText('Selected recipe: Spinach Rice Bowl')).toBeInTheDocument()
+  })
+
   it('shows an error when the cooking assistant fails', async () => {
     const user = userEvent.setup()
     const fetch = vi.fn(async () => new Response('Server error', { status: 500 }))

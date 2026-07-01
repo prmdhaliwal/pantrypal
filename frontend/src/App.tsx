@@ -86,6 +86,7 @@ function App() {
   const [recommendationStatus, setRecommendationStatus] =
     useState<RecommendationStatus>('idle')
   const [retrievedContext, setRetrievedContext] = useState<RetrievedContext[]>([])
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string>()
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark')
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme)
 
@@ -96,6 +97,9 @@ function App() {
   const resolvedTheme = themeMode === 'system' ? systemTheme : `pantrypal-${themeMode}`
   const displayedRecipes =
     recommendationStatus === 'loaded' ? recommendations : sampleRecipes
+  const selectedRecipe = recommendations.find(
+    (recipe) => recipe.id === selectedRecipeId,
+  )
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) {
@@ -130,6 +134,7 @@ function App() {
 
   async function findRecommendations() {
     setRecommendationStatus('loading')
+    setSelectedRecipeId(undefined)
 
     try {
       const response = await pantryPalApi.recommendRecipes(ingredients)
@@ -153,6 +158,7 @@ function App() {
       const response = await pantryPalApi.askCookingQuestion({
         question,
         ingredients,
+        selectedRecipeId,
       })
 
       setAssistantAnswer(response.answer)
@@ -349,7 +355,11 @@ function App() {
               <div className="grid gap-4 lg:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
                 {displayedRecipes.map((recipe) => (
                   <article
-                    className="border-base-300 rounded-lg border bg-base-200/60 p-4"
+                    className={`rounded-lg border bg-base-200/60 p-4 ${
+                      recipe.id === selectedRecipeId
+                        ? 'border-info'
+                        : 'border-base-300'
+                    }`}
                     key={recipe.id}
                   >
                     <div className="mb-4 flex items-start justify-between gap-3">
@@ -370,6 +380,23 @@ function App() {
                     <p className="text-base-content/65 text-sm">
                       Missing: {formatIngredientList(recipe.missingIngredients)}
                     </p>
+                    {recommendationStatus === 'loaded' && (
+                      <button
+                        aria-label={`Use ${recipe.name} in assistant`}
+                        aria-pressed={recipe.id === selectedRecipeId}
+                        className={`btn btn-xs mt-4 ${
+                          recipe.id === selectedRecipeId
+                            ? 'btn-info'
+                            : 'btn-outline'
+                        }`}
+                        onClick={() => setSelectedRecipeId(recipe.id)}
+                        type="button"
+                      >
+                        {recipe.id === selectedRecipeId
+                          ? 'Selected'
+                          : 'Use in assistant'}
+                      </button>
+                    )}
                   </article>
                 ))}
               </div>
@@ -388,6 +415,12 @@ function App() {
             </div>
 
             <div className="flex flex-1 flex-col gap-5 p-5">
+              {selectedRecipe && (
+                <p className="badge badge-info badge-outline">
+                  Selected recipe: {selectedRecipe.name}
+                </p>
+              )}
+
               <label className="form-control">
                 <span className="label-text mb-2">Question</span>
                 <textarea

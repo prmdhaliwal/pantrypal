@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.assistant import answer_cooking_question
+from app.llm_providers import build_llm_client_from_env
 from app.recipe_catalog import STARTER_RECIPE_RECORDS, STARTER_RECIPES
 from app.recipe_documents import build_recipe_documents
 from app.recommender import recommend_recipes
@@ -30,4 +31,5 @@ def ask(request: AskRequest) -> AskResponse:
         pantry_ingredients=request.ingredients,
         documents=documents,
         selected_recipe_id=request.selectedRecipeId,
+        llm_client=build_llm_client_from_env(),
     )

@@ -1,9 +1,15 @@
 from fastapi.testclient import TestClient
 
+import app.main as main
 from app.main import app
 
 
 client = TestClient(app)
+
+
+class FakeLLMClient:
+    def generate(self, prompt: str) -> str:
+        return "Generated answer from configured provider."
 
 
 def test_health_returns_ok():
@@ -72,3 +78,26 @@ def test_ask_prioritizes_selected_recipe_context():
     }
     assert body["retrievedContext"][0]["recipeId"] == "starter-tomato-pasta"
     assert body["retrievedContext"][0]["score"] == 1.0
+
+
+def test_ask_uses_configured_llm_provider(monkeypatch):
+    monkeypatch.setattr(
+        main,
+        "build_llm_client_from_env",
+        lambda: FakeLLMClient(),
+        raising=False,
+    )
+
+    response = client.post(
+        "/ask",
+        json={
+            "question": "Can I cook this with eggs?",
+            "ingredients": ["eggs", "rice"],
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["providerConfigured"] is True
+    assert body["answer"] == "Generated answer from configured provider."

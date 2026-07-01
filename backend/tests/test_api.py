@@ -101,3 +101,33 @@ def test_ask_uses_configured_llm_provider(monkeypatch):
 
     assert body["providerConfigured"] is True
     assert body["answer"] == "Generated answer from configured provider."
+
+
+def test_ask_falls_back_when_llm_provider_config_is_invalid(monkeypatch):
+    def raise_provider_error():
+        raise ValueError("LLM_API_KEY is required")
+
+    monkeypatch.setattr(
+        main,
+        "build_llm_client_from_env",
+        raise_provider_error,
+        raising=False,
+    )
+
+    response = client.post(
+        "/ask",
+        json={
+            "question": "What can I cook with rice?",
+            "ingredients": ["eggs"],
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["providerConfigured"] is False
+    assert body["answer"] == (
+        "Assistant provider is not configured. "
+        "Showing retrieved recipe context instead."
+    )
+    assert body["retrievedContext"][0]["recipeId"] == "starter-egg-fried-rice"

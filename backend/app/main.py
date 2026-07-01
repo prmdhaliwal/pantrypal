@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.assistant import answer_cooking_question
+from app.assistant import LLMClient, answer_cooking_question
 from app.llm_providers import build_llm_client_from_env
 from app.recipe_catalog import STARTER_RECIPE_RECORDS, STARTER_RECIPES
 from app.recipe_documents import build_recipe_documents
@@ -9,6 +9,13 @@ from app.schemas import AskRequest, AskResponse, RecommendRequest, RecommendResp
 
 
 app = FastAPI(title="PantryPal AI")
+
+
+def _build_optional_llm_client() -> LLMClient | None:
+    try:
+        return build_llm_client_from_env()
+    except ValueError:
+        return None
 
 
 @app.get("/health")
@@ -31,5 +38,5 @@ def ask(request: AskRequest) -> AskResponse:
         pantry_ingredients=request.ingredients,
         documents=documents,
         selected_recipe_id=request.selectedRecipeId,
-        llm_client=build_llm_client_from_env(),
+        llm_client=_build_optional_llm_client(),
     )

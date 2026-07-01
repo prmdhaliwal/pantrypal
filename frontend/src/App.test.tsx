@@ -61,6 +61,38 @@ describe('App', () => {
     expect(screen.queryByText(/once wired to the backend/i)).not.toBeInTheDocument()
   })
 
+  it('labels starter recommendations as examples before a backend search', () => {
+    render(<App />)
+
+    expect(
+      screen.getByText('Starter examples shown until you run a backend search.'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Egg Fried Rice' })).toBeInTheDocument()
+  })
+
+  it('shows recommendation loading context while backend search is running', async () => {
+    const user = userEvent.setup()
+    const fetch = vi.fn(
+      () =>
+        new Promise<Response>(() => {
+          // Keep the request pending so the loading state stays visible.
+        }),
+    )
+
+    Object.defineProperty(globalThis, 'fetch', {
+      configurable: true,
+      value: fetch,
+      writable: true,
+    })
+
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Find recipes' }))
+
+    expect(screen.getByText('Searching with 3 pantry items.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Finding recipes' })).toBeDisabled()
+  })
+
   it('adds a pantry ingredient locally', async () => {
     const user = userEvent.setup()
 

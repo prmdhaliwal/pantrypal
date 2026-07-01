@@ -125,12 +125,23 @@ function App() {
       return
     }
 
+    resetBackendState()
     setIngredients([...ingredients, nextIngredient])
     setIngredientInput('')
   }
 
   function removeIngredient(ingredient: string) {
+    resetBackendState()
     setIngredients(ingredients.filter((item) => item !== ingredient))
+  }
+
+  function resetBackendState() {
+    setAssistantAnswer('')
+    setAssistantStatus('idle')
+    setRecommendations([])
+    setRecommendationStatus('idle')
+    setRetrievedContext([])
+    setSelectedRecipeId(undefined)
   }
 
   async function findRecommendations() {

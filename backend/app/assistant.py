@@ -35,10 +35,13 @@ def answer_cooking_question(
     provider_configured = False
 
     if llm_client is not None:
-        answer = llm_client.generate(
-            _build_prompt(question, pantry_ingredients, contexts)
-        )
-        provider_configured = True
+        try:
+            answer = llm_client.generate(
+                _build_prompt(question, pantry_ingredients, contexts)
+            )
+            provider_configured = True
+        except Exception:
+            answer = FALLBACK_ANSWER
 
     return AskResponse(
         answer=answer,

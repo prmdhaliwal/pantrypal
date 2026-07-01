@@ -94,6 +94,7 @@ function App() {
     () => `${ingredients.length} pantry items ready`,
     [ingredients.length],
   )
+  const hasIngredients = ingredients.length > 0
   const resolvedTheme = themeMode === 'system' ? systemTheme : `pantrypal-${themeMode}`
   const displayedRecipes =
     recommendationStatus === 'loaded' ? recommendations : sampleRecipes
@@ -133,6 +134,10 @@ function App() {
   }
 
   async function findRecommendations() {
+    if (!hasIngredients) {
+      return
+    }
+
     setRecommendationStatus('loading')
     setSelectedRecipeId(undefined)
 
@@ -148,7 +153,7 @@ function App() {
   async function askAssistant() {
     const question = assistantQuestion.trim()
 
-    if (!question) {
+    if (!question || !hasIngredients) {
       return
     }
 
@@ -304,6 +309,12 @@ function App() {
                 ))}
               </div>
 
+              {!hasIngredients && (
+                <div className="alert alert-warning text-sm">
+                  Add at least one ingredient to use backend matching.
+                </div>
+              )}
+
               <div className="border-base-300 mt-auto rounded-lg border p-4">
                 <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
                   <Sparkles aria-hidden="true" size={16} />
@@ -329,7 +340,7 @@ function App() {
               </div>
               <button
                 className="btn btn-warning"
-                disabled={recommendationStatus === 'loading'}
+                disabled={!hasIngredients || recommendationStatus === 'loading'}
                 onClick={findRecommendations}
                 type="button"
               >
@@ -431,7 +442,7 @@ function App() {
 
               <button
                 className="btn btn-info"
-                disabled={assistantStatus === 'loading'}
+                disabled={!hasIngredients || assistantStatus === 'loading'}
                 onClick={askAssistant}
                 type="button"
               >

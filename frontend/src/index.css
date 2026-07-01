@@ -1,6 +1,42 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: light --default, dark --prefersdark;
+  themes: false;
+}
+@plugin "daisyui/theme" {
+  name: "pantrypal";
+  default: true;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: #1f1f1f;
+  --color-base-200: color-mix(in srgb, #f2f2f2 6%, #1f1f1f);
+  --color-base-300: color-mix(in srgb, #f2f2f2 14%, #1f1f1f);
+  --color-base-content: #f2f2f2;
+  --color-primary: #c5acd3;
+  --color-primary-content: #1f1f1f;
+  --color-secondary: #c5e5d6;
+  --color-secondary-content: #1f1f1f;
+  --color-accent: #ffd8a1;
+  --color-accent-content: #1f1f1f;
+  --color-neutral: #f2f2f2;
+  --color-neutral-content: #1f1f1f;
+  --color-info: #c5acd3;
+  --color-info-content: #1f1f1f;
+  --color-success: #c5e5d6;
+  --color-success-content: #1f1f1f;
+  --color-warning: #ffd8a1;
+  --color-warning-content: #1f1f1f;
+  --color-error: #c5acd3;
+  --color-error-content: #1f1f1f;
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
 }
 
 body {

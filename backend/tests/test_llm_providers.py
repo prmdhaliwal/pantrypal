@@ -1,6 +1,7 @@
 import pytest
 
 from app.llm_providers import LLMProviderConfig, build_llm_client_from_env
+from app.openai_provider import OpenAIResponsesClient
 
 
 class FakeClient:
@@ -44,3 +45,17 @@ def test_build_llm_client_from_env_rejects_unknown_provider():
             {"LLM_PROVIDER": "unknown"},
             provider_builders={},
         )
+
+
+def test_build_llm_client_from_env_uses_openai_api_key_alias():
+    client = build_llm_client_from_env(
+        {
+            "LLM_PROVIDER": "openai",
+            "LLM_MODEL": "gpt-test",
+            "OPENAI_API_KEY": "openai-key",
+        }
+    )
+
+    assert isinstance(client, OpenAIResponsesClient)
+    assert client.api_key == "openai-key"
+    assert client.model == "gpt-test"

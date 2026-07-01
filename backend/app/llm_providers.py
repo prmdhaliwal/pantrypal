@@ -43,7 +43,7 @@ def build_llm_client_from_env(
     config = LLMProviderConfig(
         provider=provider_key,
         model=source.get("LLM_MODEL"),
-        api_key=source.get("LLM_API_KEY"),
+        api_key=source.get("LLM_API_KEY") or source.get("OPENAI_API_KEY"),
     )
     return builders[provider_key](config)
 

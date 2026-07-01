@@ -101,6 +101,10 @@ function App() {
   const selectedRecipe = recommendations.find(
     (recipe) => recipe.id === selectedRecipeId,
   )
+  const recommendationStatusText =
+    recommendationStatus === 'loading'
+      ? `Searching with ${ingredients.length} pantry items.`
+      : 'Starter examples shown until you run a backend search.'
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) {
@@ -361,6 +365,16 @@ function App() {
             </div>
 
             <div className="flex flex-col gap-4 p-5">
+              {recommendationStatus !== 'loaded' && (
+                <div
+                  className={`alert text-sm ${
+                    recommendationStatus === 'loading' ? 'alert-warning' : ''
+                  }`}
+                >
+                  {recommendationStatusText}
+                </div>
+              )}
+
               {recommendationStatus === 'error' && (
                 <div className="alert alert-error" role="alert">
                   Could not load recipes. Check the backend and try again.

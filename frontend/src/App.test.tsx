@@ -72,6 +72,34 @@ describe('App', () => {
     expect(screen.getByText('spinach')).toBeInTheDocument()
   })
 
+  it('prevents backend actions when the pantry is empty', async () => {
+    const user = userEvent.setup()
+    const fetch = vi.fn(async () => Response.json({ results: [] }))
+
+    Object.defineProperty(globalThis, 'fetch', {
+      configurable: true,
+      value: fetch,
+      writable: true,
+    })
+
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Remove eggs' }))
+    await user.click(screen.getByRole('button', { name: 'Remove rice' }))
+    await user.click(screen.getByRole('button', { name: 'Remove tomato' }))
+
+    expect(
+      screen.getByText('Add at least one ingredient to use backend matching.'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Find recipes' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Ask assistant' })).toBeDisabled()
+
+    await user.click(screen.getByRole('button', { name: 'Find recipes' }))
+    await user.click(screen.getByRole('button', { name: 'Ask assistant' }))
+
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it('switches between dark, light, and system theme modes', async () => {
     const user = userEvent.setup()
     const matchMedia = vi.fn().mockImplementation((query: string) => ({

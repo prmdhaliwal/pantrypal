@@ -390,6 +390,46 @@ describe('App', () => {
     expect(screen.getByText('Selected recipe: Spinach Rice Bowl')).toBeInTheDocument()
   })
 
+  it('marks the selected recommendation card as assistant context', async () => {
+    const user = userEvent.setup()
+    const fetch = vi.fn(async () =>
+      Response.json({
+        results: [
+          {
+            id: 'starter-spinach-rice-bowl',
+            name: 'Spinach Rice Bowl',
+            imageUrl: null,
+            category: 'Vegetarian',
+            area: 'Australian',
+            matchedIngredients: ['rice'],
+            missingIngredients: ['spinach'],
+            score: 0.75,
+            instructionsUrl: null,
+          },
+        ],
+      }),
+    )
+
+    Object.defineProperty(globalThis, 'fetch', {
+      configurable: true,
+      value: fetch,
+      writable: true,
+    })
+
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Find recipes' }))
+    await screen.findByRole('heading', { name: 'Spinach Rice Bowl' })
+
+    expect(screen.queryByText('Used by assistant')).not.toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Use Spinach Rice Bowl in assistant' }),
+    )
+
+    expect(screen.getByText('Used by assistant')).toBeInTheDocument()
+  })
+
   it('clears stale recommendations and assistant context when pantry changes', async () => {
     const user = userEvent.setup()
     const fetch = vi.fn(async (input: string) => {

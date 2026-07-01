@@ -421,6 +421,11 @@ function App() {
                     <p className="text-base-content/65 text-sm">
                       Missing: {formatIngredientList(recipe.missingIngredients)}
                     </p>
+                    {recipe.id === selectedRecipeId && (
+                      <span className="badge badge-info badge-outline mt-4">
+                        Used by assistant
+                      </span>
+                    )}
                     {recommendationStatus === 'loaded' && (
                       <button
                         aria-label={`Use ${recipe.name} in assistant`}

@@ -14,32 +14,50 @@ import {
   X,
 } from 'lucide-react'
 
+import {
+  createPantryPalApi,
+  type RecipeRecommendation,
+} from './api/pantryPalApi'
+
 type ThemeMode = 'dark' | 'light' | 'system'
+type RecommendationStatus = 'idle' | 'loading' | 'loaded' | 'error'
 type ResolvedTheme = 'pantrypal-dark' | 'pantrypal-light'
 
 const starterIngredients = ['eggs', 'rice', 'tomato']
 
-const sampleRecipes = [
+const sampleRecipes: RecipeRecommendation[] = [
   {
+    id: 'sample-egg-fried-rice',
     name: 'Egg Fried Rice',
-    match: '2 of 3 ingredients',
-    missing: 'soy sauce',
-    score: '67%',
-    tag: 'Quick dinner',
+    imageUrl: null,
+    category: 'Quick dinner',
+    area: null,
+    matchedIngredients: ['eggs', 'rice'],
+    missingIngredients: ['soy sauce'],
+    score: 0.67,
+    instructionsUrl: null,
   },
   {
+    id: 'sample-simple-omelette',
     name: 'Simple Omelette',
-    match: '1 of 2 ingredients',
-    missing: 'cheese',
-    score: '50%',
-    tag: 'Breakfast',
+    imageUrl: null,
+    category: 'Breakfast',
+    area: null,
+    matchedIngredients: ['eggs'],
+    missingIngredients: ['cheese'],
+    score: 0.5,
+    instructionsUrl: null,
   },
   {
+    id: 'sample-tomato-pasta',
     name: 'Tomato Pasta',
-    match: '1 of 3 ingredients',
-    missing: 'pasta, garlic',
-    score: '33%',
-    tag: 'Pantry staple',
+    imageUrl: null,
+    category: 'Pantry staple',
+    area: null,
+    matchedIngredients: ['tomato'],
+    missingIngredients: ['pasta', 'garlic'],
+    score: 0.33,
+    instructionsUrl: null,
   },
 ]
 
@@ -54,8 +72,12 @@ function getSystemTheme(): ResolvedTheme {
 }
 
 function App() {
+  const pantryPalApi = useMemo(() => createPantryPalApi(), [])
   const [ingredients, setIngredients] = useState(starterIngredients)
   const [ingredientInput, setIngredientInput] = useState('')
+  const [recommendations, setRecommendations] = useState<RecipeRecommendation[]>([])
+  const [recommendationStatus, setRecommendationStatus] =
+    useState<RecommendationStatus>('idle')
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark')
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme)
 
@@ -64,6 +86,8 @@ function App() {
     [ingredients.length],
   )
   const resolvedTheme = themeMode === 'system' ? systemTheme : `pantrypal-${themeMode}`
+  const displayedRecipes =
+    recommendationStatus === 'loaded' ? recommendations : sampleRecipes
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) {
@@ -94,6 +118,18 @@ function App() {
 
   function removeIngredient(ingredient: string) {
     setIngredients(ingredients.filter((item) => item !== ingredient))
+  }
+
+  async function findRecommendations() {
+    setRecommendationStatus('loading')
+
+    try {
+      const response = await pantryPalApi.recommendRecipes(ingredients)
+      setRecommendations(response.results)
+      setRecommendationStatus('loaded')
+    } catch {
+      setRecommendationStatus('error')
+    }
   }
 
   return (
@@ -255,38 +291,57 @@ function App() {
                   Ranked examples using the current pantry shape.
                 </p>
               </div>
-              <button className="btn btn-warning" type="button">
+              <button
+                className="btn btn-warning"
+                disabled={recommendationStatus === 'loading'}
+                onClick={findRecommendations}
+                type="button"
+              >
                 <Search aria-hidden="true" size={16} />
-                Find recipes
+                {recommendationStatus === 'loading' ? 'Finding recipes' : 'Find recipes'}
               </button>
             </div>
 
-            <div className="grid gap-4 p-5 lg:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
-              {sampleRecipes.map((recipe) => (
-                <article
-                  className="border-base-300 rounded-lg border bg-base-200/60 p-4"
-                  key={recipe.name}
-                >
-                  <div className="mb-4 flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-semibold">{recipe.name}</h3>
-                      <p className="text-base-content/60 mt-1 text-sm">
-                        {recipe.match}
-                      </p>
+            <div className="flex flex-col gap-4 p-5">
+              {recommendationStatus === 'error' && (
+                <div className="alert alert-error" role="alert">
+                  Could not load recipes. Check the backend and try again.
+                </div>
+              )}
+
+              {recommendationStatus === 'loaded' && recommendations.length === 0 && (
+                <div className="border-base-300 rounded-lg border p-4 text-sm">
+                  No recipe matches yet. Try adding another pantry ingredient.
+                </div>
+              )}
+
+              <div className="grid gap-4 lg:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+                {displayedRecipes.map((recipe) => (
+                  <article
+                    className="border-base-300 rounded-lg border bg-base-200/60 p-4"
+                    key={recipe.id}
+                  >
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-semibold">{recipe.name}</h3>
+                        <p className="text-base-content/60 mt-1 text-sm">
+                          Matched: {formatIngredientList(recipe.matchedIngredients)}
+                        </p>
+                      </div>
+                      <span className="badge badge-warning badge-outline">
+                        {formatScore(recipe.score)}
+                      </span>
                     </div>
-                    <span className="badge badge-warning badge-outline">
-                      {recipe.score}
-                    </span>
-                  </div>
-                  <div className="mb-4 flex items-center gap-2 text-sm">
-                    <Clock3 aria-hidden="true" size={15} />
-                    {recipe.tag}
-                  </div>
-                  <p className="text-base-content/65 text-sm">
-                    Missing: {recipe.missing}
-                  </p>
-                </article>
-              ))}
+                    <div className="mb-4 flex items-center gap-2 text-sm">
+                      <Clock3 aria-hidden="true" size={15} />
+                      {recipe.category ?? recipe.area ?? 'Recipe match'}
+                    </div>
+                    <p className="text-base-content/65 text-sm">
+                      Missing: {formatIngredientList(recipe.missingIngredients)}
+                    </p>
+                  </article>
+                ))}
+              </div>
             </div>
           </section>
 
@@ -335,6 +390,14 @@ function App() {
       </section>
     </main>
   )
+}
+
+function formatIngredientList(ingredients: string[]) {
+  return ingredients.length > 0 ? ingredients.join(', ') : 'none'
+}
+
+function formatScore(score: number) {
+  return `${Math.round(score * 100)}%`
 }
 
 export default App

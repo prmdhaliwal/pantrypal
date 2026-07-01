@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.assistant import LLMClient, answer_cooking_question
 from app.llm_providers import build_llm_client_from_env
@@ -9,6 +10,15 @@ from app.schemas import AskRequest, AskResponse, RecommendRequest, RecommendResp
 
 
 app = FastAPI(title="PantryPal AI")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+    ],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def _build_optional_llm_client() -> LLMClient | None:

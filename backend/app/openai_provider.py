@@ -25,4 +25,25 @@ class OpenAIResponsesClient:
             },
         )
         response.raise_for_status()
-        return response.json()["output_text"]
+        return _extract_response_text(response.json())
+
+
+def _extract_response_text(payload: dict) -> str:
+    output_text = payload.get("output_text")
+    if isinstance(output_text, str):
+        return output_text
+
+    for output_item in payload.get("output", []):
+        if not isinstance(output_item, dict):
+            continue
+
+        for content_item in output_item.get("content", []):
+            if not isinstance(content_item, dict):
+                continue
+
+            if content_item.get("type") == "output_text":
+                text = content_item.get("text")
+                if isinstance(text, str):
+                    return text
+
+    raise KeyError("output_text")

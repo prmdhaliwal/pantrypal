@@ -35,6 +35,35 @@ def test_openai_responses_client_generates_text_with_responses_api():
     }
 
 
+def test_openai_responses_client_reads_nested_output_text():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "output": [
+                    {
+                        "type": "message",
+                        "content": [
+                            {
+                                "type": "output_text",
+                                "text": "Use the eggs and rice for fried rice.",
+                            }
+                        ],
+                    }
+                ]
+            },
+        )
+
+    http_client = httpx.Client(transport=httpx.MockTransport(handler))
+    client = OpenAIResponsesClient(
+        api_key="test-key",
+        model="gpt-test",
+        http_client=http_client,
+    )
+
+    assert client.generate("Pantry prompt") == "Use the eggs and rice for fried rice."
+
+
 def test_build_llm_client_from_env_registers_openai_provider():
     client = build_llm_client_from_env(
         {

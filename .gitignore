@@ -11,7 +11,10 @@ frontend/dist/
 
 # Local env files
 .env
+.env.*
 .env.local
+!.env.example
+!**/.env.example
 
 # Local brainstorming artifacts
 .superpowers/

@@ -1,5 +1,8 @@
 services:
   backend:
+    env_file:
+      - path: backend/.env
+        required: false
     build:
       context: .
       dockerfile: backend/Dockerfile

@@ -48,14 +48,14 @@ describe('App', () => {
   it('describes the connected recommendation and assistant workflow', () => {
     render(<App />)
 
-    expect(screen.getByText('Backend recommender')).toBeInTheDocument()
+    expect(screen.getByText('Recipe matching')).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Find recipes to rank pantry matches with the local backend.',
+        'Rank recipes by what you already have and what you still need.',
       ),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('Ask a pantry question to retrieve grounded recipe context.'),
+      screen.getByText('Ask a question to see the recipe context behind the answer.'),
     ).toBeInTheDocument()
     expect(screen.queryByText(/next slice/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/once wired to the backend/i)).not.toBeInTheDocument()
@@ -65,7 +65,9 @@ describe('App', () => {
     render(<App />)
 
     expect(
-      screen.getByText('Starter examples shown until you run a backend search.'),
+      screen.getByText(
+        'Sample matches are shown. Run search to rank recipes from your pantry.',
+      ),
     ).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Egg Fried Rice' })).toBeInTheDocument()
   })
@@ -98,7 +100,7 @@ describe('App', () => {
 
     expect(
       screen.getByText(
-        'Assistant will use your pantry ingredients unless you select a recipe.',
+        'No recipe selected. The assistant will answer from your pantry list.',
       ),
     ).toBeInTheDocument()
   })
@@ -156,7 +158,9 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Remove tomato' }))
 
     expect(
-      screen.getByText('Add at least one ingredient to use backend matching.'),
+      screen.getByText(
+        'Your pantry is empty. Add an ingredient to unlock recipe search.',
+      ),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Find recipes' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Ask assistant' })).toBeDisabled()
@@ -269,7 +273,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Find recipes' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Could not load recipes. Check the backend and try again.',
+      'Recipe search is unavailable. Make sure the backend is running, then try again.',
     )
   })
 
@@ -421,13 +425,13 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Find recipes' }))
     await screen.findByRole('heading', { name: 'Spinach Rice Bowl' })
 
-    expect(screen.queryByText('Used by assistant')).not.toBeInTheDocument()
+    expect(screen.queryByText('Assistant context')).not.toBeInTheDocument()
 
     await user.click(
       screen.getByRole('button', { name: 'Use Spinach Rice Bowl in assistant' }),
     )
 
-    expect(screen.getByText('Used by assistant')).toBeInTheDocument()
+    expect(screen.getByText('Assistant context')).toBeInTheDocument()
   })
 
   it('clears stale recommendations and assistant context when pantry changes', async () => {
@@ -491,7 +495,7 @@ describe('App', () => {
     expect(screen.queryByText('Selected recipe: Spinach Rice Bowl')).not.toBeInTheDocument()
     expect(screen.queryByText('Use the selected rice bowl context.')).not.toBeInTheDocument()
     expect(
-      screen.getByText('Ask a pantry question to retrieve grounded recipe context.'),
+      screen.getByText('Ask a question to see the recipe context behind the answer.'),
     ).toBeInTheDocument()
   })
 
@@ -510,7 +514,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Ask assistant' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Could not ask the assistant. Check the backend and try again.',
+      'Assistant is unavailable. Make sure the backend is running, then try again.',
     )
   })
 })

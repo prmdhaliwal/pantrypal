@@ -17,7 +17,10 @@ def normalize_meal(meal: dict[str, Any]) -> dict[str, Any]:
         "imageUrl": meal.get("strMealThumb"),
         "category": meal.get("strCategory"),
         "area": meal.get("strArea"),
+        "instructions": _clean_optional_text(meal.get("strInstructions")),
+        "tags": _tags_from_meal(meal),
         "instructionsUrl": meal.get("strSource"),
+        "youtubeUrl": meal.get("strYoutube"),
     }
 
 
@@ -65,3 +68,19 @@ def _ingredients_from_meal(meal: dict[str, Any]) -> list[str]:
             ingredients.append(ingredient.strip().lower())
 
     return ingredients
+
+
+def _tags_from_meal(meal: dict[str, Any]) -> list[str]:
+    tags = meal.get("strTags") or ""
+    return [
+        tag.strip()
+        for tag in tags.split(",")
+        if tag.strip()
+    ]
+
+
+def _clean_optional_text(value: str | None) -> str | None:
+    if not value:
+        return None
+
+    return " ".join(value.split())

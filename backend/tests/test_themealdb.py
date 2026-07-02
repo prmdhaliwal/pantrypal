@@ -11,6 +11,9 @@ def test_normalize_meal_maps_themealdb_fields_to_recipe_cache_record():
         "strCategory": "Chicken",
         "strArea": "Japanese",
         "strSource": "https://example.test/recipe",
+        "strInstructions": "Bake with rice until the chicken is cooked through.",
+        "strTags": "Casserole,Dinner",
+        "strYoutube": "https://example.test/video",
         "strIngredient1": "Chicken",
         "strIngredient2": "Rice",
         "strIngredient3": "Soy Sauce",
@@ -27,7 +30,10 @@ def test_normalize_meal_maps_themealdb_fields_to_recipe_cache_record():
         "imageUrl": "https://example.test/chicken.jpg",
         "category": "Chicken",
         "area": "Japanese",
+        "instructions": "Bake with rice until the chicken is cooked through.",
+        "tags": ["Casserole", "Dinner"],
         "instructionsUrl": "https://example.test/recipe",
+        "youtubeUrl": "https://example.test/video",
     }
 
 
@@ -46,6 +52,9 @@ def test_fetch_meals_by_first_letter_uses_themealdb_search_endpoint():
                         "strCategory": "Dessert",
                         "strArea": "British",
                         "strSource": None,
+                        "strInstructions": "Bake until golden.",
+                        "strTags": None,
+                        "strYoutube": None,
                         "strIngredient1": "Apple",
                         "strIngredient2": "Butter",
                     }
@@ -65,6 +74,9 @@ def test_fetch_meals_by_first_letter_uses_themealdb_search_endpoint():
             "imageUrl": None,
             "category": "Dessert",
             "area": "British",
+            "instructions": "Bake until golden.",
+            "tags": [],
             "instructionsUrl": None,
+            "youtubeUrl": None,
         }
     ]

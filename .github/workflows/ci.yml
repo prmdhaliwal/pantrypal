@@ -64,3 +64,17 @@ jobs:
 
       - name: Lint frontend
         run: npm run lint
+
+  docker:
+    name: Docker Compose validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose config
+        run: docker compose config
+
+      - name: Build Docker Compose images
+        run: docker compose build

@@ -104,13 +104,13 @@ function App() {
   const recommendationStatusText =
     recommendationStatus === 'loading'
       ? `Searching with ${ingredients.length} pantry items.`
-      : 'Starter examples shown until you run a backend search.'
+      : 'Sample matches are shown. Run search to rank recipes from your pantry.'
   const assistantStatusText =
     assistantStatus === 'loading'
       ? `Retrieving recipe context for ${ingredients.length} pantry items.`
       : selectedRecipe
-        ? `Assistant will focus on ${selectedRecipe.name}.`
-        : 'Assistant will use your pantry ingredients unless you select a recipe.'
+        ? `Using ${selectedRecipe.name} as recipe context.`
+        : 'No recipe selected. The assistant will answer from your pantry list.'
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) {
@@ -202,21 +202,21 @@ function App() {
     >
       <header className="border-base-300 bg-base-100/95 border-b">
         <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-5">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <span className="bg-success text-success-content flex size-10 shrink-0 items-center justify-center rounded-lg">
               <ChefHat aria-hidden="true" size={22} />
             </span>
-            <div>
+            <div className="min-w-0">
               <p className="text-lg font-semibold">PantryPal AI</p>
-              <p className="text-base-content/60 text-sm">
+              <p className="text-base-content/60 text-sm leading-tight">
                 Ingredient-first recipe workspace
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <div className="hidden items-center gap-2 text-sm md:flex">
-              <span className="badge badge-success badge-outline">Local pantry</span>
-              <span className="badge badge-outline">RAG assistant ready</span>
+              <span className="badge badge-success badge-outline">Pantry ready</span>
+              <span className="badge badge-outline">Recipe context</span>
             </div>
             <div aria-label="Theme mode" className="join" role="group">
               <button
@@ -263,7 +263,7 @@ function App() {
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-5 py-6">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
-            <p className="text-success text-sm font-semibold uppercase tracking-wide">
+            <p className="text-success text-sm font-semibold uppercase">
               Pantry workspace
             </p>
             <h1 className="mt-2 text-3xl font-bold text-base-content md:text-4xl">
@@ -314,10 +314,10 @@ function App() {
               <div className="flex flex-wrap gap-2">
                 {ingredients.map((ingredient) => (
                   <span
-                    className="badge badge-lg gap-1 border-base-300 bg-base-200"
+                    className="badge badge-lg max-w-full gap-1 border-base-300 bg-base-200"
                     key={ingredient}
                   >
-                    {ingredient}
+                    <span className="max-w-40 truncate">{ingredient}</span>
                     <button
                       aria-label={`Remove ${ingredient}`}
                       className="btn btn-ghost btn-xs btn-circle"
@@ -332,17 +332,17 @@ function App() {
 
               {!hasIngredients && (
                 <div className="alert alert-warning text-sm">
-                  Add at least one ingredient to use backend matching.
+                  Your pantry is empty. Add an ingredient to unlock recipe search.
                 </div>
               )}
 
-              <div className="border-base-300 mt-auto rounded-lg border p-4">
+              <div className="border-base-300 rounded-lg border p-4">
                 <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
                   <Sparkles aria-hidden="true" size={16} />
-                  Backend recommender
+                  Recipe matching
                 </div>
                 <p className="text-base-content/65 text-sm">
-                  Find recipes to rank pantry matches with the local backend.
+                  Rank recipes by what you already have and what you still need.
                 </p>
               </div>
             </div>
@@ -356,7 +356,7 @@ function App() {
                   <h2 className="text-xl font-semibold">Recipe recommendations</h2>
                 </div>
                 <p className="text-base-content/65 text-sm">
-                  Ranked examples using the current pantry shape.
+                  Compare what you have against what each recipe needs.
                 </p>
               </div>
               <button
@@ -383,13 +383,15 @@ function App() {
 
               {recommendationStatus === 'error' && (
                 <div className="alert alert-error" role="alert">
-                  Could not load recipes. Check the backend and try again.
+                  Recipe search is unavailable. Make sure the backend is running,
+                  then try again.
                 </div>
               )}
 
               {recommendationStatus === 'loaded' && recommendations.length === 0 && (
                 <div className="border-base-300 rounded-lg border p-4 text-sm">
-                  No recipe matches yet. Try adding another pantry ingredient.
+                  No matches for this pantry yet. Add another ingredient or try a
+                  broader pantry item.
                 </div>
               )}
 
@@ -404,8 +406,8 @@ function App() {
                     key={recipe.id}
                   >
                     <div className="mb-4 flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="font-semibold">{recipe.name}</h3>
+                      <div className="min-w-0">
+                        <h3 className="break-words font-semibold">{recipe.name}</h3>
                         <p className="text-base-content/60 mt-1 text-sm">
                           Matched: {formatIngredientList(recipe.matchedIngredients)}
                         </p>
@@ -418,12 +420,12 @@ function App() {
                       <Clock3 aria-hidden="true" size={15} />
                       {recipe.category ?? recipe.area ?? 'Recipe match'}
                     </div>
-                    <p className="text-base-content/65 text-sm">
+                    <p className="text-base-content/65 break-words text-sm">
                       Missing: {formatIngredientList(recipe.missingIngredients)}
                     </p>
                     {recipe.id === selectedRecipeId && (
                       <span className="badge badge-info badge-outline mt-4">
-                        Used by assistant
+                        Assistant context
                       </span>
                     )}
                     {recommendationStatus === 'loaded' && (
@@ -440,7 +442,7 @@ function App() {
                       >
                         {recipe.id === selectedRecipeId
                           ? 'Selected'
-                          : 'Use in assistant'}
+                          : 'Ask about this'}
                       </button>
                     )}
                   </article>
@@ -462,7 +464,7 @@ function App() {
 
             <div className="flex flex-1 flex-col gap-5 p-5">
               {selectedRecipe && (
-                <p className="badge badge-info badge-outline">
+                <p className="badge badge-info badge-outline h-auto max-w-full justify-start whitespace-normal">
                   Selected recipe: {selectedRecipe.name}
                 </p>
               )}
@@ -496,37 +498,42 @@ function App() {
 
               {assistantStatus === 'error' && (
                 <div className="alert alert-error" role="alert">
-                  Could not ask the assistant. Check the backend and try again.
+                  Assistant is unavailable. Make sure the backend is running, then
+                  try again.
                 </div>
               )}
 
               <div className="border-base-300 rounded-lg border p-4">
-                <p className="mb-2 text-sm font-semibold">Retrieved context</p>
+                <p className="mb-2 text-sm font-semibold">Recipe context</p>
                 {retrievedContext.length > 0 ? (
                   <div className="space-y-3">
                     {retrievedContext.map((context) => (
                       <div key={context.recipeId}>
                         <div className="mb-1 flex items-center justify-between gap-2">
-                          <p className="text-sm font-medium">{context.name}</p>
+                          <p className="break-words text-sm font-medium">
+                            {context.name}
+                          </p>
                           <span className="badge badge-info badge-outline">
                             {formatScore(context.score)}
                           </span>
                         </div>
-                        <p className="text-base-content/65 text-sm">{context.text}</p>
+                        <p className="text-base-content/65 break-words text-sm">
+                          {context.text}
+                        </p>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <p className="text-base-content/65 text-sm">
-                    Ask a pantry question to retrieve grounded recipe context.
+                    Ask a question to see the recipe context behind the answer.
                   </p>
                 )}
               </div>
 
               <div className="chat chat-start mt-auto">
-                <div className="chat-bubble bg-base-200 text-base-content">
+                <div className="chat-bubble bg-base-200 text-base-content break-words">
                   {assistantAnswer ||
-                    'Ask the assistant to get a grounded answer from retrieved recipe context.'}
+                    'Your answer will appear here after the assistant checks recipe context.'}
                 </div>
               </div>
             </div>

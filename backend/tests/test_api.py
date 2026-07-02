@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 import app.main as main
@@ -10,6 +11,16 @@ client = TestClient(app)
 class FakeLLMClient:
     def generate(self, prompt: str) -> str:
         return "Generated answer from configured provider."
+
+
+@pytest.fixture(autouse=True)
+def disable_llm_provider(monkeypatch):
+    monkeypatch.setattr(
+        main,
+        "build_llm_client_from_env",
+        lambda: None,
+        raising=False,
+    )
 
 
 def test_health_returns_ok():
@@ -46,6 +57,38 @@ def test_recommend_allows_frontend_dev_origin():
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:5173"
+
+
+def test_cors_preflight_limits_methods_and_headers():
+    response = client.options(
+        "/ask",
+        headers={
+            "Origin": "http://127.0.0.1:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    allowed_methods = response.headers["access-control-allow-methods"]
+    assert "GET" in allowed_methods
+    assert "POST" in allowed_methods
+    assert "OPTIONS" in allowed_methods
+    assert "PUT" not in allowed_methods
+    assert "DELETE" not in allowed_methods
+
+
+def test_cors_preflight_rejects_unexpected_headers():
+    response = client.options(
+        "/ask",
+        headers={
+            "Origin": "http://127.0.0.1:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "x-openai-api-key",
+        },
+    )
+
+    assert response.status_code == 400
 
 
 def test_ask_returns_assistant_fallback_with_recipe_context():

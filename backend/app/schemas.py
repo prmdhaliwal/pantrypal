@@ -1,8 +1,15 @@
+from typing import Annotated
+
 from pydantic import BaseModel, Field
 
 
+Ingredient = Annotated[str, Field(min_length=1, max_length=60)]
+Question = Annotated[str, Field(min_length=1, max_length=500)]
+RecipeId = Annotated[str, Field(min_length=1, max_length=120)]
+
+
 class RecommendRequest(BaseModel):
-    ingredients: list[str] = Field(min_length=1)
+    ingredients: list[Ingredient] = Field(min_length=1, max_length=20)
 
 
 class RecipeRecommendation(BaseModel):
@@ -22,9 +29,9 @@ class RecommendResponse(BaseModel):
 
 
 class AskRequest(BaseModel):
-    question: str = Field(min_length=1)
-    ingredients: list[str] = Field(min_length=1)
-    selectedRecipeId: str | None = None
+    question: Question
+    ingredients: list[Ingredient] = Field(min_length=1, max_length=20)
+    selectedRecipeId: RecipeId | None = None
 
 
 class AskCitation(BaseModel):

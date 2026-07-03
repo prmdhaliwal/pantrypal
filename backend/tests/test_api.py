@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 
 import app.main as main
 from app.main import app
+from app.recommender import RecipeCandidate
 
 
 client = TestClient(app)
@@ -30,7 +31,9 @@ def test_health_returns_ok():
     assert response.json() == {"status": "ok"}
 
 
-def test_recommend_returns_ranked_recipes_for_matching_ingredients():
+def test_recommend_returns_ranked_recipes_for_matching_ingredients(monkeypatch):
+    monkeypatch.setattr(main, "STARTER_RECOMMENDER_MODEL", None)
+
     response = client.post("/recommend", json={"ingredients": ["eggs", "rice"]})
 
     assert response.status_code == 200
@@ -43,6 +46,47 @@ def test_recommend_returns_ranked_recipes_for_matching_ingredients():
     assert results[0]["matchedIngredients"] == ["eggs", "rice"]
     assert results[0]["missingIngredients"] == ["soy sauce"]
     assert results[0]["score"] == 0.67
+
+
+def test_recommend_uses_trained_model_ranking_when_available(monkeypatch):
+    class ModelRanking:
+        def __init__(self, recipe: RecipeCandidate, similarity: float):
+            self.recipe = recipe
+            self.similarity = similarity
+
+    class FakeModel:
+        def rank(self, pantry_ingredients: list[str], top_k: int = 5):
+            assert pantry_ingredients == ["eggs", "rice"]
+            assert top_k == len(main.STARTER_RECIPES)
+            return [
+                ModelRanking(
+                    RecipeCandidate(
+                        id="omelette",
+                        name="Simple Omelette",
+                        ingredients=["eggs", "cheese"],
+                    ),
+                    0.91,
+                ),
+                ModelRanking(
+                    RecipeCandidate(
+                        id="fried-rice",
+                        name="Egg Fried Rice",
+                        ingredients=["eggs", "rice", "soy sauce"],
+                    ),
+                    0.54,
+                ),
+            ]
+
+    monkeypatch.setattr(main, "STARTER_RECOMMENDER_MODEL", FakeModel())
+
+    response = client.post("/recommend", json={"ingredients": ["eggs", "rice"]})
+
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert [recipe["id"] for recipe in results] == ["omelette", "fried-rice"]
+    assert results[0]["matchedIngredients"] == ["eggs"]
+    assert results[0]["missingIngredients"] == ["cheese"]
+    assert results[0]["score"] == 0.91
 
 
 def test_recommend_allows_frontend_dev_origin():

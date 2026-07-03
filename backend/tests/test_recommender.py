@@ -1,4 +1,8 @@
-from app.recommender import RecipeCandidate, recommend_recipes
+from app.recommender import (
+    RecipeCandidate,
+    recommend_ranked_recipes,
+    recommend_recipes,
+)
 
 
 def test_recommend_recipes_ranks_by_ingredient_overlap():
@@ -56,3 +60,31 @@ def test_recommend_recipes_skips_recipes_with_no_matches():
     results = recommend_recipes(["rice"], recipes)
 
     assert results == []
+
+
+def test_recommend_ranked_recipes_preserves_model_order_and_explanations():
+    recipes = [
+        RecipeCandidate(
+            id="omelette",
+            name="Simple Omelette",
+            ingredients=["eggs", "cheese"],
+        ),
+        RecipeCandidate(
+            id="fried-rice",
+            name="Egg Fried Rice",
+            ingredients=["eggs", "rice", "soy sauce"],
+        ),
+    ]
+
+    results = recommend_ranked_recipes(
+        pantry_ingredients=["eggs", "rice"],
+        ranked_recipes=[
+            (recipes[0], 0.91),
+            (recipes[1], 0.54),
+        ],
+    )
+
+    assert [recipe.id for recipe in results] == ["omelette", "fried-rice"]
+    assert results[0].matchedIngredients == ["eggs"]
+    assert results[0].missingIngredients == ["cheese"]
+    assert results[0].score == 0.91

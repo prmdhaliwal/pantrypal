@@ -3,9 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.assistant import LLMClient, answer_cooking_question
 from app.llm_providers import build_llm_client_from_env
-from app.recipe_catalog import STARTER_RECIPE_RECORDS, STARTER_RECIPES
+from app.recipe_catalog import (
+    STARTER_RECIPE_RECORDS,
+    STARTER_RECOMMENDER_MODEL,
+    STARTER_RECIPES,
+)
 from app.recipe_documents import build_recipe_documents
-from app.recommender import recommend_recipes
+from app.recommender import recommend_ranked_recipes, recommend_recipes
 from app.schemas import AskRequest, AskResponse, RecommendRequest, RecommendResponse
 
 
@@ -35,6 +39,21 @@ def health() -> dict[str, str]:
 
 @app.post("/recommend", response_model=RecommendResponse)
 def recommend(request: RecommendRequest) -> RecommendResponse:
+    if STARTER_RECOMMENDER_MODEL is not None:
+        rankings = STARTER_RECOMMENDER_MODEL.rank(
+            request.ingredients,
+            top_k=len(STARTER_RECIPES),
+        )
+        return RecommendResponse(
+            results=recommend_ranked_recipes(
+                request.ingredients,
+                [
+                    (ranking.recipe, ranking.similarity)
+                    for ranking in rankings
+                ],
+            )
+        )
+
     return RecommendResponse(
         results=recommend_recipes(request.ingredients, STARTER_RECIPES)
     )
